@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Викторина</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Викторина по литературе</h1>
+        <p class="subtitle">Выберите правильный ответ из трёх вариантов</p>
+        
+        <button class="btn-load" id="loadBtn" onclick="loadQuestion()">
+            Загрузить вопрос
+        </button>
+
+        <div class="loading" id="loading">Загрузка...</div>
+        <div class="error" id="error"></div>
+
+        <div class="question-box" id="questionBox">
+            <div class="question-text" id="questionText"></div>
+            
+            <div class="answers-grid" id="answersGrid"></div>
+            
+            <div class="result-message" id="resultMessage"></div>
+            <div class="correct-answer" id="correctAnswer"></div>
+            
+            <button class="btn-retry" id="retryBtn" onclick="loadQuestion()">
+                Следующий вопрос
+            </button>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="correctCount">0</div>
+                    <div class="stat-label">Правильно</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="wrongCount">0</div>
+                    <div class="stat-label">Ошибок</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
