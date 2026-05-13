@@ -1,156 +1,160 @@
-// Глобальная статистика
-let stats = { correct: 0, wrong: 0, total: 0 };
-let isAnswered = false;
-let correctAnswerText = '';
+const API_BASE = 'http://127.0.0.1:8000';
 
-/**
- * Перемешивание массива (алгоритм Фишера-Йейтса)
- */
-function shuffle(array) {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const startBtn = document.getElementById('startBtn');
+const addBtn = document.getElementById('addBtn');
+const modalOverlay = document.getElementById('modalOverlay');
+const cancelBtn = document.getElementById('cancelBtn');
+const addQuestionForm = document.getElementById('addQuestionForm');
+const questionText = document.getElementById('questionText');
+const answersContainer = document.getElementById('answersContainer');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('nextBtn');
+const formError = document.getElementById('formError');
+
+let currentCorrectAnswer = null;
+
+startBtn.addEventListener('click', startQuiz);
+addBtn.addEventListener('click', openModal);
+cancelBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+});
+nextBtn.addEventListener('click', loadNextQuestion);
+addQuestionForm.addEventListener('submit', handleAddQuestion);
+
+function startQuiz() {
+    startScreen.style.display = 'none';
+    quizScreen.style.display = 'block';
+    loadNextQuestion();
 }
 
-/**
- * Загрузка вопроса с API
- */
-async function loadQuestion() {
-    const btn = document.getElementById('loadBtn');
-    const loading = document.getElementById('loading');
-    const error = document.getElementById('error');
-    const questionBox = document.getElementById('questionBox');
-
-    btn.disabled = true;
-    loading.classList.add('active');
-    error.classList.remove('active');
-    questionBox.classList.remove('active');
-    isAnswered = false;
-
+async function loadNextQuestion() {
+    resetQuizState();
+    
     try {
-        const response = await fetch('http://127.0.0.1:8000/question', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ошибка: ${response.status}`);
-        }
-
+        const response = await fetch(`${API_BASE}/question`);
+        if (!response.ok) throw new Error('Ошибка загрузки вопроса');
+        
         const data = await response.json();
-        renderQuestion(data);
-
-    } catch (err) {
-        console.error('Ошибка загрузки:', err);
-        error.textContent = `⚠️ ${err.message}. Проверьте, что сервер запущен на :8000`;
-        error.classList.add('active');
-    } finally {
-        btn.disabled = false;
-        loading.classList.remove('active');
+        displayQuestion(data);
+    } catch (error) {
+        showError('Не удалось загрузить вопрос. Проверьте соединение с сервером.');
+        console.error('Error:', error);
     }
 }
 
-/**
- * Отрисовка вопроса и кнопок ответов
- */
-function renderQuestion(data) {
-    const questionBox = document.getElementById('questionBox');
-    const questionText = document.getElementById('questionText');
-    const answersGrid = document.getElementById('answersGrid');
-    const resultMessage = document.getElementById('resultMessage');
-    const correctAnswerDiv = document.getElementById('correctAnswer');
-    const retryBtn = document.getElementById('retryBtn');
-
-    // Сброс интерфейса
-    questionText.textContent = data.body || 'Вопрос не загружен';
-    answersGrid.innerHTML = '';
-    resultMessage.className = 'result-message';
-    resultMessage.textContent = '';
-    correctAnswerDiv.classList.remove('show');
-    retryBtn.classList.remove('show');
-    correctAnswerText = data.answer;
-
-    // Формирование пула ответов: 1 правильный + 2 случайных неправильных
-    let wrongAnswers = Array.isArray(data.other_answers) ? [...data.other_answers] : [];
+function displayQuestion(data) {
+    questionText.textContent = data.body;
+    currentCorrectAnswer = data.answer;
     
-    // Если мало неправильных ответов, добавляем заглушки
-    while (wrongAnswers.length < 2) {
-        wrongAnswers.push(`Вариант ${wrongAnswers.length + 1}`);
-    }
+    // Берём не более 3 неправильных ответов + 1 правильный = всего 4
+    const incorrectAnswers = data.other_answers.slice(0, 3);
+    const allAnswers = [...incorrectAnswers, data.answer];
     
-    const selectedWrong = shuffle(wrongAnswers).slice(0, 2);
+    // Перемешиваем и берём ровно 4 ответа (на случай, если неправильных < 3)
+    const shuffled = shuffleArray(allAnswers).slice(0, 4);
     
-    const allAnswers = shuffle([
-        { text: data.answer, isCorrect: true },
-        { text: selectedWrong[0], isCorrect: false },
-        { text: selectedWrong[1], isCorrect: false }
-    ]);
-
-    // Создание кнопок ответов
-    allAnswers.forEach((ans) => {
+    shuffled.forEach(answer => {
         const btn = document.createElement('button');
         btn.className = 'answer-btn';
-        btn.textContent = ans.text;
-        btn.onclick = () => handleAnswer(btn, ans.isCorrect);
-        answersGrid.appendChild(btn);
+        btn.textContent = answer;
+        btn.addEventListener('click', () => handleAnswerSelect(btn, answer));
+        answersContainer.appendChild(btn);
     });
-
-    questionBox.classList.add('active');
 }
 
-/**
- * Обработка выбора ответа
- */
-function handleAnswer(btn, isCorrect) {
-    if (isAnswered) return;
-    isAnswered = true;
-
-    const buttons = document.querySelectorAll('.answer-btn');
-    const resultMessage = document.getElementById('resultMessage');
-    const correctAnswerDiv = document.getElementById('correctAnswer');
-    const retryBtn = document.getElementById('retryBtn');
-
-    // Блокируем все кнопки
-    buttons.forEach(b => b.disabled = true);
-
-    // Обновляем статистику
-    stats.total++;
+function handleAnswerSelect(selectedBtn, selectedAnswer) {
+    const buttons = answersContainer.querySelectorAll('.answer-btn');
+    buttons.forEach(btn => btn.disabled = true);
     
-    if (isCorrect) {
-        stats.correct++;
-        btn.classList.add('correct');
-        resultMessage.textContent = '🎉 Верно! Отличный ответ!';
-        resultMessage.className = 'result-message success';
+    if (selectedAnswer === currentCorrectAnswer) {
+        selectedBtn.classList.add('correct');
+        showFeedback('Правильно! 🎉', 'success');
     } else {
-        stats.wrong++;
-        btn.classList.add('wrong');
-        
-        // Подсветить правильный ответ
-        buttons.forEach(b => {
-            if (b.textContent === correctAnswerText) {
-                b.classList.add('correct');
+        selectedBtn.classList.add('incorrect');
+        buttons.forEach(btn => {
+            if (btn.textContent === currentCorrectAnswer) {
+                btn.classList.add('correct');
             }
         });
-        
-        resultMessage.textContent = '😔 Неверно. Попробуйте следующий вопрос!';
-        resultMessage.className = 'result-message error';
-        correctAnswerDiv.textContent = `✅ Правильный ответ: ${correctAnswerText}`;
-        correctAnswerDiv.classList.add('show');
+        showFeedback('Неправильно. Попробуйте следующий вопрос!', 'error');
     }
-
-    // Обновляем статистику на странице
-    document.getElementById('correctCount').textContent = stats.correct;
-    document.getElementById('wrongCount').textContent = stats.wrong;
-    document.getElementById('totalCount').textContent = stats.total;
-
-    retryBtn.classList.add('show');
+    
+    nextBtn.classList.add('visible');
 }
 
-// Инициализация при загрузке DOM
-document.addEventListener('DOMContentLoaded', () => {
-    // Опционально: автозагрузка первого вопроса
-    // loadQuestion();
-});
+function resetQuizState() {
+    questionText.textContent = '';
+    answersContainer.innerHTML = '';
+    feedback.className = 'feedback';
+    feedback.style.display = 'none';
+    nextBtn.classList.remove('visible');
+    currentCorrectAnswer = null;
+}
+
+function showFeedback(message, type) {
+    feedback.textContent = message;
+    feedback.className = `feedback ${type}`;
+    feedback.style.display = 'block';
+}
+
+function showError(message) {
+    feedback.textContent = message;
+    feedback.className = 'feedback error';
+    feedback.style.display = 'block';
+}
+
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+function openModal() {
+    modalOverlay.classList.add('active');
+    addQuestionForm.reset();
+    formError.classList.remove('visible');
+}
+
+function closeModal() {
+    modalOverlay.classList.remove('active');
+}
+
+async function handleAddQuestion(e) {
+    e.preventDefault();
+    formError.classList.remove('visible');
+    
+    const topic = document.getElementById('topic').value.trim();
+    const body = document.getElementById('body').value.trim();
+    const answer = document.getElementById('answer').value.trim();
+    
+    if (!topic || !body || !answer) {
+        formError.textContent = 'Заполните все поля';
+        formError.classList.add('visible');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/add_question`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ topic, body, answer })
+        });
+        
+        if (!response.ok) throw new Error('Ошибка при создании вопроса');
+        
+        closeModal();
+        alert('Вопрос успешно добавлен!');
+    } catch (error) {
+        formError.textContent = 'Не удалось добавить вопрос. Проверьте соединение с сервером.';
+        formError.classList.add('visible');
+        console.error('Error:', error);
+    }
+}

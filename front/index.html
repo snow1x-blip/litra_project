@@ -3,47 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Викторина</title>
+    <title>Викторина по литературе</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <header>
+        <div class="header-title">Викторина по литературе</div>
+        <button class="add-btn" id="addBtn">добавить +</button>
+    </header>
+
     <div class="container">
-        <h1>Викторина по литературе</h1>
-        <p class="subtitle">Выберите правильный ответ из трёх вариантов</p>
-        
-        <button class="btn-load" id="loadBtn" onclick="loadQuestion()">
-            Загрузить вопрос
-        </button>
+        <div class="start-screen" id="startScreen">
+            <button class="start-btn" id="startBtn">начать</button>
+        </div>
 
-        <div class="loading" id="loading">Загрузка...</div>
-        <div class="error" id="error"></div>
-
-        <div class="question-box" id="questionBox">
+        <div class="quiz-screen" id="quizScreen">
             <div class="question-text" id="questionText"></div>
-            
-            <div class="answers-grid" id="answersGrid"></div>
-            
-            <div class="result-message" id="resultMessage"></div>
-            <div class="correct-answer" id="correctAnswer"></div>
-            
-            <button class="btn-retry" id="retryBtn" onclick="loadQuestion()">
-                Следующий вопрос
-            </button>
+            <div class="answers-container" id="answersContainer"></div>
+            <div class="feedback" id="feedback"></div>
+            <button class="next-btn" id="nextBtn">следующий вопрос</button>
+        </div>
+    </div>
 
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="correctCount">0</div>
-                    <div class="stat-label">Правильно</div>
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-title">Добавить вопрос</div>
+            <form id="addQuestionForm">
+                <div class="form-group">
+                    <label for="topic">Тема</label>
+                    <input type="text" id="topic" name="topic" required>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="wrongCount">0</div>
-                    <div class="stat-label">Ошибок</div>
+                <div class="form-group">
+                    <label for="body">Вопрос</label>
+                    <textarea id="body" name="body" required></textarea>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalCount">0</div>
-                    <div class="stat-label">Всего</div>
+                <div class="form-group">
+                    <label for="answer">Ответ</label>
+                    <input type="text" id="answer" name="answer" required>
                 </div>
-            </div>
+                <div class="error-message" id="formError"></div>
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn cancel" id="cancelBtn">отмена</button>
+                    <button type="submit" class="modal-btn create">создать</button>
+                </div>
+            </form>
         </div>
     </div>
 

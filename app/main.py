@@ -6,7 +6,7 @@ import uvicorn
 
 from models.model import Quastions
 from schemas.schemas import create_question
-from schemas.question_schemas import QuestionResponse
+from schemas.question_schemas import QuestionResponse, QuestionCreate
 from database import Session, create_db, get_db
 from add_item.add_question import add_question_from_db
 from game.game import get_question_in_db
@@ -27,10 +27,17 @@ app.add_middleware(
 
 @app.get("/question", response_model=QuestionResponse)
 def get_question_api(db: Session = Depends(get_db)):
-    print(get_question_in_db(db, rd.randint(1, 8)))
-    body, answer, other_answer = get_question_in_db(db, rd.randint(1, 8))
+    body, answer, other_answer = get_question_in_db(db, rd.randint(1, 9))
 
     return QuestionResponse(body=body, answer=answer, other_answers=other_answer)
+
+
+@app.post("/add_question", response_model=QuestionCreate)
+def add_question_api(question: QuestionCreate, db: Session = Depends(get_db)):
+    new_question = Quastions(topic=question.topic, body=question.body, answer=question.answer)
+    add_question_from_db(db, new_question)
+
+    return question
 
 
 # question_test = Quastions(topic="test_topic", body="test_body", answer="test_answer")
