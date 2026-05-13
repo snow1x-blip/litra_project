@@ -4,6 +4,8 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from sqlalchemy import func
+
 from models.model import Quastions
 from schemas.schemas import create_question
 from schemas.question_schemas import QuestionResponse, QuestionCreate
@@ -27,7 +29,8 @@ app.add_middleware(
 
 @app.get("/question", response_model=QuestionResponse)
 def get_question_api(db: Session = Depends(get_db)):
-    body, answer, other_answer = get_question_in_db(db, rd.randint(1, 9))
+    row_count = db.query(func.count(Quastions.id)).scalar()
+    body, answer, other_answer = get_question_in_db(db, rd.randint(1, row_count))
 
     return QuestionResponse(body=body, answer=answer, other_answers=other_answer)
 
