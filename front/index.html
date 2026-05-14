@@ -13,10 +13,12 @@
     </header>
 
     <div class="container">
+        <!-- Стартовый экран с одной кнопкой -->
         <div class="start-screen" id="startScreen">
             <button class="start-btn" id="startBtn">начать</button>
         </div>
 
+        <!-- Экран викторины -->
         <div class="quiz-screen" id="quizScreen">
             <div class="question-text" id="questionText"></div>
             <div class="answers-container" id="answersContainer"></div>
@@ -25,10 +27,19 @@
         </div>
     </div>
 
+    <!-- Модальное окно -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-title">Добавить вопрос</div>
             <form id="addQuestionForm">
+                <div class="form-group">
+                    <label for="category">Категория</label>
+                    <select id="category" name="category" required>
+                        <option value="">Выберите категорию</option>
+                        <option value="char">Персонажи</option>
+                        <option value="events">События</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="topic">Тема</label>
                     <input type="text" id="topic" name="topic" required>

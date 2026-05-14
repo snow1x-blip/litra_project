@@ -7,7 +7,6 @@ import uvicorn
 from sqlalchemy import func
 
 from models.model import Quastions
-from schemas.schemas import create_question
 from schemas.question_schemas import QuestionResponse, QuestionCreate
 from database import Session, create_db, get_db
 from add_item.add_question import add_question_from_db
@@ -37,7 +36,7 @@ def get_question_api(db: Session = Depends(get_db)):
 
 @app.post("/add_question", response_model=QuestionCreate)
 def add_question_api(question: QuestionCreate, db: Session = Depends(get_db)):
-    new_question = Quastions(topic=question.topic, body=question.body, answer=question.answer)
+    new_question = Quastions(category=question.category, topic=question.topic, body=question.body, answer=question.answer)
     add_question_from_db(db, new_question)
 
     return question

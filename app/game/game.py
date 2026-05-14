@@ -13,7 +13,10 @@ def get_question_in_db(session: Session, id: int) -> tuple[str, str, list]:
     statement_topic = select(Quastions.topic).where(Quastions.id == id)
     topic = session.scalars(statement_topic).one()
 
-    statement_other_answer = select(Quastions.answer).where(Quastions.topic == topic)
+    statement_category = select(Quastions.category).where(Quastions.id == id)
+    category = session.scalars(statement_category).one()
+
+    statement_other_answer = select(Quastions.answer).where(Quastions.topic == topic, Quastions.category == category)
     other_answer = session.scalars(statement_other_answer).all()
 
     def other_answers_result(mas, ans):
@@ -22,4 +25,4 @@ def get_question_in_db(session: Session, id: int) -> tuple[str, str, list]:
 
         return result
 
-    return (str(body), str(answer), other_answers_result(other_answer, answer))
+    return (str(body), str(answer), other_answers_result(other_answer, str(answer)))
